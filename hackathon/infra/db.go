@@ -15,7 +15,7 @@ import (
 func InitDB() (*sql.DB, error) {
 	// ①-1
 	//godotenvで環境変数を読み込んでおく
-	if err := godotenv.Load(".env"); err != nil {
+	if err := godotenv.Load(); err != nil {
 		return nil, err
 	}
 	// DB接続のための準備
@@ -23,6 +23,11 @@ func InitDB() (*sql.DB, error) {
 	mysqlPwd := os.Getenv("MYSQL_PWD")
 	mysqlHost := os.Getenv("MYSQL_HOST")
 	mysqlDatabase := os.Getenv("MYSQL_DATABASE")
+
+	fmt.Printf("mysqlUser: %s\n", mysqlUser)
+	fmt.Printf("mysqlPwd: %s\n", mysqlPwd)
+	fmt.Printf("mysqlHost: %s\n", mysqlHost)
+	fmt.Printf("mysqlDatabase: %s\n", mysqlDatabase)
 
 	connStr := fmt.Sprintf("%s:%s@%s/%s", mysqlUser, mysqlPwd, mysqlHost, mysqlDatabase)
 	db, err := sql.Open("mysql", connStr)
