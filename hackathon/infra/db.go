@@ -9,15 +9,9 @@ import (
 	"syscall"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 )
 
 func InitDB() (*sql.DB, error) {
-	// ①-1
-	//godotenvで環境変数を読み込んでおく
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
 	// DB接続のための準備
 	mysqlUser := os.Getenv("MYSQL_USER")
 	mysqlPwd := os.Getenv("MYSQL_PWD")
