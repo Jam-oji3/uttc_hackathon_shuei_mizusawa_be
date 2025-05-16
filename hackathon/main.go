@@ -13,7 +13,7 @@ import (
 func main() {
 	db, err := infra.InitDB()
 	if err != nil {
-		println("fail: InitDB(), %v\n", err)
+		fmt.Printf("fail: InitDB(), %v\n", err)
 	}
 	defer db.Close()
 
