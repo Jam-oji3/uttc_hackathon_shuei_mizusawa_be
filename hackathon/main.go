@@ -21,7 +21,7 @@ func main() {
 
 	userDAO := &dao.UserDAO{DB: db}
 
-	registerUC := &usecase.UserRegisterUseCase{UserDAO: userDAO}
+	registerUC := &usecase.UserRegisterUseCase{UserDAO: userDAO, DB: db}
 
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
