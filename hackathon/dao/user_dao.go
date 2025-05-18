@@ -2,32 +2,66 @@ package dao
 
 import (
 	"database/sql"
-	"db/model"
+	"hackathon/model"
 )
 
 type UserDAO struct {
 	DB *sql.DB
 }
 
-func (dao *UserDAO) FindByName(name string) ([]model.User, error) {
-	rows, err := dao.DB.Query("SELECT id, name, age FROM user WHERE name = ?", name)
-	if err != nil {
+func (dao *UserDAO) FindById(id string) (*model.User, error) {
+	row := dao.DB.QueryRow(`
+	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
+	FROM user
+	WHERE id = ?`, id)
+	if err := row.Err(); err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var users []model.User
-	for rows.Next() {
-		var u model.User
-		if err := rows.Scan(&u.Id, &u.Name, &u.Age); err != nil {
-			return nil, err
-		}
-		users = append(users, u)
+	var u model.User
+	if err := row.Scan(&u.Id, &u.UserName, &u.DisplayName, &u.Email, &u.Bio, &u.IconURL, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		return nil, err
 	}
-	return users, nil
+	return &u, nil
 }
 
-func (dao *UserDAO) Insert(user model.User) error {
-	_, err := dao.DB.Exec("INSERT INTO user (id, name, age) VALUES (?, ?, ?)", user.Id, user.Name, user.Age)
+func (dao *UserDAO) FindByUserName(userName string) (*model.User, error) {
+	row := dao.DB.QueryRow(`
+	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
+	FROM user
+	WHERE username = ?`, userName)
+	if err := row.Err(); err != nil {
+		return nil, err
+	}
+
+	var u model.User
+	if err := row.Scan(&u.Id, &u.UserName, &u.DisplayName, &u.Email, &u.Bio, &u.IconURL, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+
+// 変更処理はトランザクション対応
+func (dao *UserDAO) Insert(tx *sql.Tx, user *model.User) error {
+	_, err := tx.Exec(`
+		INSERT INTO user (id, username, display_name, email, bio, icon_url, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		user.Id, user.UserName, user.DisplayName, user.Email, user.Bio, user.IconURL, user.CreatedAt, user.UpdatedAt)
+	return err
+}
+
+func (dao *UserDAO) Update(tx *sql.Tx, user *model.User) error {
+	_, err := tx.Exec(`
+	UPDATE user 
+	SET display_name = ?, bio = ?, icon_url = ?, updated_at = ?
+	WHERE id = ?`,
+		user.DisplayName, user.Bio, user.IconURL, user.UpdatedAt, user.Id)
+	return err
+}
+
+func (dao *UserDAO) Delete(tx *sql.Tx, id string) error {
+	_, err := tx.Exec(`
+	DELETE FROM user 
+	WHERE id = ?`, id)
 	return err
 }
