@@ -1,4 +1,4 @@
-module db
+module hackathon
 
 go 1.24
 
