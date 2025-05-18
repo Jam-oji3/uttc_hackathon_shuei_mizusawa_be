@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"db/usecase"
 	"encoding/json"
+	"hackathon/usecase"
 	"net/http"
 )
 
 type SearchUserController struct {
-	UseCase *usecase.SearchUserUseCase
+	UseCase *usecase.UserSearchUseCase
 }
 
 func (c *SearchUserController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
