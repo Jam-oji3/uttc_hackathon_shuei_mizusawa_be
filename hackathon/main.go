@@ -1,11 +1,11 @@
 package main
 
 import (
-	"db/controller"
-	"db/dao"
-	"db/infra"
-	"db/usecase"
 	"fmt"
+	"hackathon/controller"
+	"hackathon/dao"
+	"hackathon/infra"
+	"hackathon/usecase"
 	"log"
 	"net/http"
 )
@@ -21,16 +21,12 @@ func main() {
 
 	userDAO := &dao.UserDAO{DB: db}
 
-	searchUC := &usecase.SearchUserUseCase{UserDAO: userDAO}
-	registerUC := &usecase.RegisterUserUseCase{UserDAO: userDAO}
+	registerUC := &usecase.UserRegisterUseCase{UserDAO: userDAO}
 
-	http.HandleFunc("/user", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
-		case http.MethodGet:
-			controller := &controller.SearchUserController{UseCase: searchUC}
-			controller.ServeHTTP(w, r)
 		case http.MethodPost:
-			controller := &controller.RegisterUserController{UseCase: registerUC}
+			controller := &controller.UserRegisterController{UseCase: registerUC}
 			controller.ServeHTTP(w, r)
 		default:
 			w.WriteHeader(http.StatusMethodNotAllowed)

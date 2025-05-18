@@ -1,54 +1,87 @@
 package controller
 
 import (
-	"db/usecase"
 	"encoding/json"
-	"fmt"
-	"io"
+	"errors"
+	"hackathon/usecase"
 	"net/http"
+	"net/mail"
+	"regexp"
 )
 
+type UserRegisterController struct {
+	UseCase *usecase.UserRegisterUseCase
+}
 type ReqBodyForHTTPPost struct {
-	Name string `json:"name"`
-	Age  int    `json:"age"`
+	UserName    string `json:"username"`
+	DisplayName string `json:"display_name"`
+	Bio         string `json:"bio"`
+	IconURL     string `json:"icon_url"`
+	Email       string `json:"email"`
 }
 
 type ResBodyForHTTPPost struct {
 	Id string `json:"id"`
 }
 
-type RegisterUserController struct {
-	UseCase *usecase.RegisterUserUseCase
+func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	defer r.Body.Close()
+
+	var req ReqBodyForHTTPPost
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	if err := isValidInput(req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, err := c.UseCase.Execute(req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(ResBodyForHTTPPost{Id: id})
 }
 
-func (c *RegisterUserController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
+var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
+func isValidInput(req ReqBodyForHTTPPost) error {
+	if req.UserName == "" {
+		return errors.New("username is required")
 	}
-	var req ReqBodyForHTTPPost
-	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
+	if req.DisplayName == "" {
+		return errors.New("display_name is required")
 	}
-
-	if req.Name == "" || len(req.Name) > 50 || req.Age < 20 || req.Age > 80 {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
+	if req.Email == "" {
+		return errors.New("email is required")
 	}
-
-	id, err := c.UseCase.Execute(req.Name, req.Age)
-	if err != nil {
-		fmt.Printf("fail: RegisterUserController, %v\n", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+	if len(req.UserName) > 50 {
+		return errors.New("username is too long")
 	}
-
-	json.NewEncoder(w).Encode(ResBodyForHTTPPost{Id: id})
+	if !usernameRegex.MatchString(req.UserName) {
+		return errors.New("username can only contain letters, numbers, and underscore")
+	}
+	if len(req.DisplayName) > 50 {
+		return errors.New("display_name is too long")
+	}
+	if len(req.Bio) > 200 {
+		return errors.New("bio is too long")
+	}
+	if len(req.IconURL) > 2083 {
+		return errors.New("icon_url is too long")
+	}
+	if _, err := mail.ParseAddress(req.Email); err != nil {
+		return errors.New("invalid email format")
+	}
+	return nil
 }
