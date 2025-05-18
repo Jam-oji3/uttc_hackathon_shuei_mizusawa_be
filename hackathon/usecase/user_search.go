@@ -1,14 +1,18 @@
 package usecase
 
 import (
-	"db/dao"
-	"db/model"
+	"hackathon/dao"
+	"hackathon/model"
 )
 
-type SearchUserUseCase struct {
+type UserSearchUseCase struct {
 	UserDAO *dao.UserDAO
 }
 
-func (uc *SearchUserUseCase) Execute(name string) ([]model.User, error) {
-	return uc.UserDAO.FindByName(name)
+func (uc *UserSearchUseCase) Execute(username string) (*model.User, error) {
+	user, err := uc.UserDAO.FindByUserName(username)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
