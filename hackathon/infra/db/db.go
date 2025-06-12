@@ -19,7 +19,7 @@ func InitDB() (*sql.DB, error) {
 	mysqlDatabase := os.Getenv("MYSQL_DATABASE")
 
 	connStr := fmt.Sprintf("%s:%s@%s/%s", mysqlUser, mysqlPwd, mysqlHost, mysqlDatabase)
-	db, err := sql.Open("db", connStr)
+	db, err := sql.Open("mysql", connStr)
 	if err != nil {
 		return nil, err
 	}
