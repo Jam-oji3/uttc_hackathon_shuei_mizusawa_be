@@ -3,25 +3,23 @@ package main
 import (
 	"fmt"
 	"hackathon/controller"
-	"hackathon/dao"
-	"hackathon/infra"
+	sqlDB "hackathon/infra/db"
+	"hackathon/infra/mysql"
 	"hackathon/usecase"
 	"log"
 	"net/http"
 )
 
 func main() {
-	db, err := infra.InitDB()
+	db, err := sqlDB.InitDB()
 	if err != nil {
 		fmt.Printf("fail: InitDB(), %v\n", err)
 	}
 	defer db.Close()
+	sqlDB.CloseDBWithSysCall(db)
 
-	infra.CloseDBWithSysCall(db)
-
-	userDAO := &dao.UserDAO{DB: db}
-
-	registerUC := &usecase.UserRegisterUseCase{UserDAO: userDAO, DB: db}
+	userRepo := mysql.NewUserRepository(db)
+	registerUC := usecase.NewUserRegisterUseCase(userRepo, db)
 
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
