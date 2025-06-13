@@ -16,8 +16,8 @@ type UserRegisterUseCase struct {
 	DB         *sql.DB
 }
 
-func NewUserRegisterUseCase(userRepo repository.UserRepository, db *sql.DB) *UserRegisterUseCase {
-	return &UserRegisterUseCase{UserRepo: userRepo, DB: db}
+func NewUserRegisterUseCase(txExecutor repository.TransactionExecutor, userRepo repository.UserRepository, db *sql.DB) *UserRegisterUseCase {
+	return &UserRegisterUseCase{TxExecutor: txExecutor, UserRepo: userRepo, DB: db}
 }
 
 func (uc *UserRegisterUseCase) Execute(ctx context.Context, userName string, displayName string, bio string, iconURL string, email string) (string, error) {

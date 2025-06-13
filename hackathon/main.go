@@ -18,7 +18,8 @@ func main() {
 	mysql.CloseDBWithSysCall(db)
 
 	userRepo := mysql.NewUserRepository()
-	registerUC := usecase.NewUserRegisterUseCase(userRepo, db)
+	txExecutor := mysql.NewTxExecutor()
+	registerUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
 
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
