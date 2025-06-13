@@ -1,12 +1,14 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"hackathon/usecase"
 	"net/http"
 	"net/mail"
 	"regexp"
+	"time"
 )
 
 type UserRegisterController struct {
@@ -43,7 +45,11 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	id, err := c.UseCase.Execute(req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	id, err := c.UseCase.Execute(ctx, req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

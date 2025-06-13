@@ -1,9 +1,11 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"hackathon/usecase"
 	"net/http"
+	"time"
 )
 
 type SearchUserController struct {
@@ -22,7 +24,10 @@ func (c *SearchUserController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	users, err := c.UseCase.Execute(name)
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	users, err := c.UseCase.Execute(ctx, name)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
