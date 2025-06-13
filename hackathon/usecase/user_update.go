@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"database/sql"
 	"hackathon/infra/db"
 	"hackathon/model"
@@ -12,9 +13,9 @@ type UserUpdateUseCase struct {
 	DB       *sql.DB
 }
 
-func (uc *UserUpdateUseCase) Execute(user *model.User) error {
+func (uc *UserUpdateUseCase) Execute(ctx context.Context, user *model.User) error {
 	_, txErr := db.DoInTx(uc.DB, func(tx *sql.Tx) (interface{}, error) {
-		if err := uc.UserRepo.Update(tx, user); err != nil {
+		if err := uc.UserRepo.Update(ctx, tx, user); err != nil {
 			return nil, err
 		}
 		return nil, nil

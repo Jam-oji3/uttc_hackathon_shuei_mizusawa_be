@@ -1,6 +1,7 @@
 package mysql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"hackathon/model"
@@ -18,8 +19,8 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (r *UserRepository) FindById(id string) (*model.User, error) {
-	row := r.DB.QueryRow(`
+func (r *UserRepository) FindById(ctx context.Context, id string) (*model.User, error) {
+	row := r.DB.QueryRowContext(ctx, `
 	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
 	FROM user WHERE id = ?`, id)
 
@@ -34,8 +35,8 @@ func (r *UserRepository) FindById(id string) (*model.User, error) {
 	return &u, nil
 }
 
-func (r *UserRepository) FindByUserName(userName string) (*model.User, error) {
-	row := r.DB.QueryRow(`
+func (r *UserRepository) FindByUserName(ctx context.Context, userName string) (*model.User, error) {
+	row := r.DB.QueryRowContext(ctx, `
 	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
 	FROM user WHERE username = ?`, userName)
 
@@ -50,16 +51,16 @@ func (r *UserRepository) FindByUserName(userName string) (*model.User, error) {
 	return &u, nil
 }
 
-func (r *UserRepository) Insert(tx *sql.Tx, user *model.User) error {
-	_, err := tx.Exec(`
+func (r *UserRepository) Insert(ctx context.Context, tx *sql.Tx, user *model.User) error {
+	_, err := tx.ExecContext(ctx, `
 	INSERT INTO user (id, username, display_name, email, bio, icon_url, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		user.Id, user.UserName, user.DisplayName, user.Email, user.Bio, user.IconURL, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
-func (r *UserRepository) Update(tx *sql.Tx, user *model.User) error {
-	res, err := tx.Exec(`
+func (r *UserRepository) Update(ctx context.Context, tx *sql.Tx, user *model.User) error {
+	res, err := tx.ExecContext(ctx, `
 	UPDATE user 
 	SET display_name = ?, bio = ?, icon_url = ?, updated_at = ?
 	WHERE id = ?`,
@@ -77,8 +78,8 @@ func (r *UserRepository) Update(tx *sql.Tx, user *model.User) error {
 	return nil
 }
 
-func (r *UserRepository) Delete(tx *sql.Tx, id string) error {
-	res, err := tx.Exec(`
+func (r *UserRepository) Delete(ctx context.Context, tx *sql.Tx, id string) error {
+	res, err := tx.ExecContext(ctx, `
 	DELETE FROM user WHERE id = ?`, id)
 	if err != nil {
 		return err

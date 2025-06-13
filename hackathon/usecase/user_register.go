@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"database/sql"
 	"hackathon/infra/db"
 	"hackathon/model"
@@ -19,7 +20,7 @@ func NewUserRegisterUseCase(userRepo repository.UserRepository, db *sql.DB) *Use
 	return &UserRegisterUseCase{UserRepo: userRepo, DB: db}
 }
 
-func (uc *UserRegisterUseCase) Execute(userName string, displayName string, bio string, iconURL string, email string) (string, error) {
+func (uc *UserRegisterUseCase) Execute(ctx context.Context, userName string, displayName string, bio string, iconURL string, email string) (string, error) {
 	id := ulid.Make().String()
 	now := time.Now()
 	user := model.User{
@@ -33,7 +34,7 @@ func (uc *UserRegisterUseCase) Execute(userName string, displayName string, bio 
 		UpdatedAt:   now,
 	}
 	_, txErr := db.DoInTx(uc.DB, func(tx *sql.Tx) (interface{}, error) {
-		if err := uc.UserRepo.Insert(tx, &user); err != nil {
+		if err := uc.UserRepo.Insert(ctx, tx, &user); err != nil {
 			return nil, err
 		}
 		return nil, nil
