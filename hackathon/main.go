@@ -5,6 +5,7 @@ import (
 	"hackathon/controller"
 	"hackathon/infra/firebase"
 	"hackathon/infra/mysql"
+	"hackathon/middleware"
 	"hackathon/usecase"
 	"log"
 	"net/http"
@@ -35,12 +36,13 @@ func main() {
 	AuthC := controller.NewAuthUserController(AuthUC)
 	UserRegisterC := controller.NewUserRegisterController(registerUC)
 
-	http.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
-		AuthC.ServeHTTP(w, r)
-	})
-	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
-		UserRegisterC.ServeHTTP(w, r)
-	})
+	allowedOrigins := []string{
+		"http://localhost:3000",
+		"https://uttc-hackathon-shuei-mizusawa-fe.vercel.app/",
+	}
+
+	http.Handle("/auth", middleware.CORS(allowedOrigins, AuthC))
+	http.Handle("/users", middleware.CORS(allowedOrigins, UserRegisterC))
 
 	log.Println("Listening on :8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
