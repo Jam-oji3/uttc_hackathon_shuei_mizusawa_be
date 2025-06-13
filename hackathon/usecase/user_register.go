@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"database/sql"
-	"hackathon/infra/db"
 	"hackathon/model"
 	"hackathon/repository"
 	"time"
@@ -12,8 +11,9 @@ import (
 )
 
 type UserRegisterUseCase struct {
-	UserRepo repository.UserRepository
-	DB       *sql.DB
+	TxExecutor repository.TransactionExecutor
+	UserRepo   repository.UserRepository
+	DB         *sql.DB
 }
 
 func NewUserRegisterUseCase(userRepo repository.UserRepository, db *sql.DB) *UserRegisterUseCase {
@@ -33,7 +33,7 @@ func (uc *UserRegisterUseCase) Execute(ctx context.Context, userName string, dis
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	_, txErr := db.DoInTx(uc.DB, func(tx *sql.Tx) (interface{}, error) {
+	_, txErr := uc.TxExecutor.DoInTx(ctx, uc.DB, func(ctx context.Context, tx *sql.Tx) (interface{}, error) {
 		if err := uc.UserRepo.Insert(ctx, tx, &user); err != nil {
 			return nil, err
 		}

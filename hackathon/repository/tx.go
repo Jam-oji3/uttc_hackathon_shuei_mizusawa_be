@@ -1,0 +1,16 @@
+package repository
+
+import (
+	"context"
+	"database/sql"
+)
+
+type DBTX interface {
+	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
+	QueryContext(context.Context, string, ...interface{}) (*sql.Rows, error)
+	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
+}
+
+type TransactionExecutor interface {
+	DoInTx(ctx context.Context, db *sql.DB, f func(ctx context.Context, tx *sql.Tx) (interface{}, error)) (interface{}, error)
+}

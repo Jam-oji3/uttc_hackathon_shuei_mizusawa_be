@@ -9,18 +9,17 @@ import (
 )
 
 type UserRepository struct {
-	DB *sql.DB
 }
 
 // UserRepositoryインターフェースを実装
 var _ repository.UserRepository = (*UserRepository)(nil)
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{DB: db}
+func NewUserRepository() *UserRepository {
+	return &UserRepository{}
 }
 
-func (r *UserRepository) FindById(ctx context.Context, id string) (*model.User, error) {
-	row := r.DB.QueryRowContext(ctx, `
+func (r *UserRepository) FindById(ctx context.Context, dbtx repository.DBTX, id string) (*model.User, error) {
+	row := dbtx.QueryRowContext(ctx, `
 	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
 	FROM user WHERE id = ?`, id)
 
@@ -35,8 +34,8 @@ func (r *UserRepository) FindById(ctx context.Context, id string) (*model.User, 
 	return &u, nil
 }
 
-func (r *UserRepository) FindByUserName(ctx context.Context, userName string) (*model.User, error) {
-	row := r.DB.QueryRowContext(ctx, `
+func (r *UserRepository) FindByUserName(ctx context.Context, dbtx repository.DBTX, userName string) (*model.User, error) {
+	row := dbtx.QueryRowContext(ctx, `
 	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
 	FROM user WHERE username = ?`, userName)
 
@@ -51,16 +50,16 @@ func (r *UserRepository) FindByUserName(ctx context.Context, userName string) (*
 	return &u, nil
 }
 
-func (r *UserRepository) Insert(ctx context.Context, tx *sql.Tx, user *model.User) error {
-	_, err := tx.ExecContext(ctx, `
+func (r *UserRepository) Insert(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
+	_, err := dbtx.ExecContext(ctx, `
 	INSERT INTO user (id, username, display_name, email, bio, icon_url, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		user.Id, user.UserName, user.DisplayName, user.Email, user.Bio, user.IconURL, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
-func (r *UserRepository) Update(ctx context.Context, tx *sql.Tx, user *model.User) error {
-	res, err := tx.ExecContext(ctx, `
+func (r *UserRepository) Update(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
+	res, err := dbtx.ExecContext(ctx, `
 	UPDATE user 
 	SET display_name = ?, bio = ?, icon_url = ?, updated_at = ?
 	WHERE id = ?`,
@@ -78,8 +77,8 @@ func (r *UserRepository) Update(ctx context.Context, tx *sql.Tx, user *model.Use
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, tx *sql.Tx, id string) error {
-	res, err := tx.ExecContext(ctx, `
+func (r *UserRepository) Delete(ctx context.Context, dbtx repository.DBTX, id string) error {
+	res, err := dbtx.ExecContext(ctx, `
 	DELETE FROM user WHERE id = ?`, id)
 	if err != nil {
 		return err
