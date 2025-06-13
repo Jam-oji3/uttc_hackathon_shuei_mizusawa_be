@@ -12,6 +12,10 @@ type SearchUserController struct {
 	UseCase *usecase.UserSearchUseCase
 }
 
+func NewSearchUserController(useCase *usecase.UserSearchUseCase) *SearchUserController {
+	return &SearchUserController{UseCase: useCase}
+}
+
 func (c *SearchUserController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		w.WriteHeader(http.StatusMethodNotAllowed)

@@ -14,6 +14,11 @@ import (
 type UserRegisterController struct {
 	UseCase *usecase.UserRegisterUseCase
 }
+
+func NewUserRegisterController(useCase *usecase.UserRegisterUseCase) *UserRegisterController {
+	return &UserRegisterController{UseCase: useCase}
+}
+
 type ReqBodyForHTTPPost struct {
 	UserName    string `json:"username"`
 	DisplayName string `json:"display_name"`
