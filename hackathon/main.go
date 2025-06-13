@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"hackathon/controller"
-	sqlDB "hackathon/infra/db"
 	"hackathon/infra/mysql"
 	"hackathon/usecase"
 	"log"
@@ -11,14 +10,14 @@ import (
 )
 
 func main() {
-	db, err := sqlDB.InitDB()
+	db, err := mysql.InitDB()
 	if err != nil {
 		fmt.Printf("fail: InitDB(), %v\n", err)
 	}
 	defer db.Close()
-	sqlDB.CloseDBWithSysCall(db)
+	mysql.CloseDBWithSysCall(db)
 
-	userRepo := mysql.NewUserRepository(db)
+	userRepo := mysql.NewUserRepository()
 	registerUC := usecase.NewUserRegisterUseCase(userRepo, db)
 
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
