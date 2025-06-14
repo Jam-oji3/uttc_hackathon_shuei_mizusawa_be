@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"hackathon/model"
 	"hackathon/usecase"
 	"net/http"
-	"net/mail"
-	"regexp"
 	"time"
 )
 
@@ -19,80 +18,59 @@ func NewUserRegisterController(useCase *usecase.UserRegisterUseCase) *UserRegist
 	return &UserRegisterController{UseCase: useCase}
 }
 
-type ReqBodyForHTTPPost struct {
-	UserName    string `json:"username"`
-	DisplayName string `json:"display_name"`
-	Bio         string `json:"bio"`
-	IconURL     string `json:"icon_url"`
-	Email       string `json:"email"`
-}
-
-type ResBodyForHTTPPost struct {
-	Id string `json:"id"`
-}
-
 func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	defer r.Body.Close()
-
-	var req ReqBodyForHTTPPost
-
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+	if err := r.ParseMultipartForm(10 << 20); err != nil {
+		http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
 		return
 	}
 
-	if err := isValidInput(req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	id := r.PostFormValue("id")
+	userName := r.FormValue("userName")
+	displayName := r.FormValue("displayName")
+	bio := r.FormValue("bio")
+	email := r.FormValue("email")
+
+	// ファイルは受け取るだけで何もしない
+	file, _, err := r.FormFile("iconFile")
+	if err != nil && err != http.ErrMissingFile {
+		http.Error(w, "failed to get icon file", http.StatusBadRequest)
 		return
 	}
+	if file != nil {
+		defer file.Close()
+	}
+
+	// 仮のサンプルアイコンURLを使用
+	iconURL := "https://example.com/sample-icon.png"
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	id, err := c.UseCase.Execute(ctx, req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
+	user, err := c.UseCase.Execute(ctx, id, userName, displayName, bio, iconURL, email)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, model.ErrUserAlreadyExists) {
+			http.Error(w, err.Error(), http.StatusConflict) // 409
+		} else {
+			// その他の予期せぬエラー
+			http.Error(w, "internal server error", http.StatusInternalServerError) // 500
+		}
 		return
 	}
 
+	// JSONレスポンスを構築して返す
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(ResBodyForHTTPPost{Id: id})
-}
-
-var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-
-func isValidInput(req ReqBodyForHTTPPost) error {
-	if req.UserName == "" {
-		return errors.New("username is required")
-	}
-	if req.DisplayName == "" {
-		return errors.New("display_name is required")
-	}
-	if req.Email == "" {
-		return errors.New("email is required")
-	}
-	if len(req.UserName) > 50 {
-		return errors.New("username is too long")
-	}
-	if !usernameRegex.MatchString(req.UserName) {
-		return errors.New("username can only contain letters, numbers, and underscore")
-	}
-	if len(req.DisplayName) > 50 {
-		return errors.New("display_name is too long")
-	}
-	if len(req.Bio) > 200 {
-		return errors.New("bio is too long")
-	}
-	if len(req.IconURL) > 2083 {
-		return errors.New("icon_url is too long")
-	}
-	if _, err := mail.ParseAddress(req.Email); err != nil {
-		return errors.New("invalid email format")
-	}
-	return nil
+	json.NewEncoder(w).Encode(struct {
+		Success bool        `json:"success"`
+		User    *model.User `json:"user"`
+		Message string      `json:"message"`
+	}{
+		Success: true,
+		User:    user,
+		Message: "User registration successful",
+	})
 }
