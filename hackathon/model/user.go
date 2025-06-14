@@ -1,14 +1,17 @@
 package model
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 type User struct {
 	Id          string
 	UserName    string
 	DisplayName string
 	Email       string
-	Bio         string
-	IconURL     string
+	Bio         sql.NullString
+	IconURL     sql.NullString
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

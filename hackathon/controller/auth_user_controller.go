@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hackathon/model"
 	"hackathon/usecase"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -46,6 +47,7 @@ func (c *AuthUserController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
+		log.Printf("authentication failed: %v (uid=%s, email=%s)", err, uid, email)
 		writeUnifiedResponse(w, false, err.Error(), uid, email, nil, http.StatusInternalServerError)
 		return
 	}
