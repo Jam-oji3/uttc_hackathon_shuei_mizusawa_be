@@ -6,6 +6,7 @@ import (
 	"errors"
 	"hackathon/model"
 	"hackathon/usecase"
+	"log"
 	"net/http"
 	"time"
 )
@@ -54,10 +55,12 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	user, err := c.UseCase.Execute(ctx, id, userName, displayName, bio, iconURL, email)
 	if err != nil {
 		if errors.Is(err, model.ErrUserAlreadyExists) {
+			log.Printf("user already exists: %v (id=%s, userName=%s)", err, id, userName)
 			http.Error(w, err.Error(), http.StatusConflict) // 409
 		} else {
 			// その他の予期せぬエラー
-			http.Error(w, "internal server error", http.StatusInternalServerError) // 500
+			log.Printf("failed to register user: %v (id=%s, userName=%s)", err, id, userName)
+			http.Error(w, err.Error(), http.StatusInternalServerError) // 500
 		}
 		return
 	}
