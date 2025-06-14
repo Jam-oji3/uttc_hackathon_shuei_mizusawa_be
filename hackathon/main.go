@@ -38,7 +38,7 @@ func main() {
 
 	allowedOrigins := []string{
 		"http://localhost:3000",
-		"https://uttc-hackathon-shuei-mizusawa-fe.vercel.app/",
+		"https://uttc-hackathon-shuei-mizusawa-fe.vercel.app",
 	}
 
 	http.Handle("/auth", middleware.CORS(allowedOrigins, AuthC))
