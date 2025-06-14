@@ -42,7 +42,7 @@ func (c *AuthUserController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	uid, email, user, err := c.UseCase.Exec(ctx, parts[1])
 	if errors.Is(err, model.ErrUserNotFound) {
-		writeUnifiedResponse(w, false, "user not found", uid, email, nil, http.StatusNotFound)
+		writeUnifiedResponse(w, true, "UserNotFound", uid, email, nil, http.StatusOK)
 		return
 	}
 	if err != nil {
