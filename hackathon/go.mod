@@ -3,9 +3,10 @@ module hackathon
 go 1.24
 
 require (
+	firebase.google.com/go/v4 v4.16.1
 	github.com/go-sql-driver/mysql v1.9.1
-	github.com/joho/godotenv v1.5.1
 	github.com/oklog/ulid/v2 v2.1.0
+	github.com/rs/cors v1.11.1
 )
 
 require (
@@ -20,7 +21,6 @@ require (
 	cloud.google.com/go/monitoring v1.24.2 // indirect
 	cloud.google.com/go/storage v1.53.0 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	firebase.google.com/go/v4 v4.16.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.27.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.51.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.51.0 // indirect
