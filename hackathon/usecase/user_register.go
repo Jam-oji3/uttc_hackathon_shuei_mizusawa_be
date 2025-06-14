@@ -26,7 +26,7 @@ func (uc *UserRegisterUseCase) Execute(ctx context.Context, id string, userName 
 	now := time.Now()
 	_, err := uc.UserRepo.FindByUserName(ctx, uc.DB, userName)
 
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+	if err != nil && !errors.Is(err, model.ErrUserNotFound) {
 		return nil, err
 	}
 	//すでにユーザーが存在する場合
