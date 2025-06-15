@@ -25,47 +25,44 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := r.ParseMultipartForm(10 << 20); err != nil {
-		http.Error(w, "failed to parse multipart form", http.StatusBadRequest)
+	// JSONデコード用の構造体を定義
+	var req struct {
+		ID          string `json:"id"`
+		UserName    string `json:"userName"`
+		DisplayName string `json:"displayName"`
+		Bio         string `json:"bio"`
+		Email       string `json:"email"`
+		IconURL     string `json:"iconUrl"`
+	}
+
+	// Content-Typeの確認（オプションだが安全のため）
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
 		return
 	}
 
-	id := r.PostFormValue("id")
-	userName := r.FormValue("userName")
-	displayName := r.FormValue("displayName")
-	bio := r.FormValue("bio")
-	email := r.FormValue("email")
-
-	// ファイルは受け取るだけで何もしない
-	file, _, err := r.FormFile("iconFile")
-	if err != nil && err != http.ErrMissingFile {
-		http.Error(w, "failed to get icon file", http.StatusBadRequest)
+	// JSONボディをデコード
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
 		return
 	}
-	if file != nil {
-		defer file.Close()
-	}
-
-	// 仮のサンプルアイコンURLを使用
-	iconURL := "https://example.com/sample-icon.png"
 
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	user, err := c.UseCase.Execute(ctx, id, userName, displayName, bio, iconURL, email)
+	user, err := c.UseCase.Execute(ctx, req.ID, req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
 	if err != nil {
 		if errors.Is(err, model.ErrUserAlreadyExists) {
-			log.Printf("user already exists: %v (id=%s, userName=%s)", err, id, userName)
-			http.Error(w, err.Error(), http.StatusConflict) // 409
+			log.Printf("user already exists: %v (id=%s, userName=%s)", err, req.ID, req.UserName)
+			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
-			// その他の予期せぬエラー
-			log.Printf("failed to register user: %v (id=%s, userName=%s)", err, id, userName)
-			http.Error(w, err.Error(), http.StatusInternalServerError) // 500
+			log.Printf("failed to register user: %v (id=%s, userName=%s)", err, req.ID, req.UserName)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	// JSONレスポンスを構築して返す
+	// 成功レスポンスを返す
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(struct {
 		Success bool        `json:"success"`
