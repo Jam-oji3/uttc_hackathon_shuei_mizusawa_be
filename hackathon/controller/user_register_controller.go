@@ -28,7 +28,7 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// JSONデコード用の構造体を定義
 	var req struct {
 		ID          string `json:"id"`
-		UserName    string `json:"userName"`
+		UserName    string `json:"username"`
 		DisplayName string `json:"displayName"`
 		Bio         string `json:"bio"`
 		Email       string `json:"email"`
