@@ -5,7 +5,7 @@ go 1.24
 require (
 	firebase.google.com/go/v4 v4.16.1
 	github.com/go-sql-driver/mysql v1.9.1
-	github.com/oklog/ulid/v2 v2.1.0
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/rs/cors v1.11.1
 )
 
