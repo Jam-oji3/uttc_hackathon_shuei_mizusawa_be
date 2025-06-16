@@ -13,8 +13,22 @@ type Post struct {
 	CreatedAt time.Time `json:"createdAt"`
 }
 type PostWithUserAndCounts struct {
-	Post        Post
-	User        User
-	LikeCount   int
-	RepostCount int
+	Id        string    `json:"id"`
+	Text      string    `json:"text"`
+	ReplyTo   *string   `json:"replyTo"`
+	RepostRef *string   `json:"repostRef"`
+	MediaType *string   `json:"mediaType"`
+	MediaURL  *string   `json:"mediaUrl"`
+	CreatedAt time.Time `json:"createdAt"`
+	Author    struct {
+		Id          string `json:"id"`
+		Username    string `json:"username"`
+		DisplayName string `json:"displayName"`
+		IconURL     string `json:"iconUrl"`
+	} `json:"author"`
+	Stats struct {
+		Likes    int `json:"likes"`
+		Reposts  int `json:"reposts"`
+		Comments int `json:"comments"`
+	} `json:"stats"`
 }
