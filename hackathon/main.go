@@ -21,7 +21,6 @@ func main() {
 	}
 
 	mysql.CloseDBWithSysCall(db)
-
 	ctx := context.Background()
 	firebaseAuthRepo, err := firebase.NewFirebaseAuthRepository(ctx)
 	if err != nil {
@@ -29,21 +28,29 @@ func main() {
 	}
 
 	userRepo := mysql.NewUserRepository()
-	postsRepo := mysql.NewPostsRepository()
+	postRepo := mysql.NewPostsRepository()
+	likesRepo := mysql.NewLikesRepository()
 	txExecutor := mysql.NewTxExecutor()
 
 	AuthUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
-	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postsRepo, db)
+	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postRepo, db)
+	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
+	likeCreateUC := usecase.NewLikeCreateUseCase(txExecutor, likesRepo, db)
+	likeDeleteUC := usecase.NewLikeDeleteUseCase(txExecutor, likesRepo, db)
 	registerUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
 
 	AuthC := controller.NewAuthUserController(AuthUC)
-	PostCreatC := controller.NewPostCreateController(postCreateUC)
-	UserRegisterC := controller.NewUserRegisterController(registerUC)
+	postCreateC := controller.NewPostCreateController(postCreateUC)
+	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
+	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
+	userRegisterC := controller.NewUserRegisterController(registerUC)
 
 	mux := http.NewServeMux()
 	mux.Handle("/auth", AuthC)
-	mux.Handle("/posts", PostCreatC)
-	mux.Handle("/users", UserRegisterC)
+	mux.Handle("/posts/", postCreateC)
+	mux.Handle("/posts/recent", postGetRecentC)
+	mux.Handle("/likes", likeC)
+	mux.Handle("/users", userRegisterC)
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 
