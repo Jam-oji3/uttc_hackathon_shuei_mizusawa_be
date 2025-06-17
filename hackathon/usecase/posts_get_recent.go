@@ -20,7 +20,7 @@ func NewPostGetRecentUseCase(postRepo repository.PostsRepository, db *sql.DB) *P
 }
 
 func (uc *PostGetRecentUseCase) Execute(ctx context.Context, userId string, limit, offset int) (*[]model.PostWithUserAndCounts, error) {
-	posts, err := uc.PostRepo.FindAllWithCounts(ctx, uc.DB, userId, limit, offset)
+	posts, err := uc.PostRepo.FindPostsWithStats(ctx, uc.DB, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
