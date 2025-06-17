@@ -18,7 +18,7 @@ func (r *LikesRepository) InsertLike(ctx context.Context, dbtx repository.DBTX, 
 	_, err := dbtx.ExecContext(ctx, `
 		INSERT INTO likes (id, user_id, post_id, created_at)
 		VALUES (?, ?, ?, ?)
-	`, like.Id, like.UserId, like.PostId)
+	`, like.Id, like.UserId, like.PostId, like.CreatedAt)
 	return err
 }
 
