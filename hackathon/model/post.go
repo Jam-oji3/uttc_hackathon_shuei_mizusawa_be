@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type Post struct {
 	Id        string    `json:"id"`
@@ -31,4 +33,8 @@ type PostWithUserAndCounts struct {
 		Reposts  int `json:"reposts"`
 		Comments int `json:"comments"`
 	} `json:"stats"`
+	UserActions struct {
+		Liked    bool `json:"liked"`
+		Reposted bool `json:"reposted"`
+	} `json:"userActions"`
 }

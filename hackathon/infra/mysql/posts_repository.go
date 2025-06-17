@@ -72,14 +72,16 @@ func (r *PostsRepository) DeletePost(ctx context.Context, dbtx repository.DBTX, 
 	return err
 }
 
-func (r *PostsRepository) FindAllWithCounts(ctx context.Context, dbtx repository.DBTX, limit, offset int) (*[]model.PostWithUserAndCounts, error) {
+func (r *PostsRepository) FindPostsWithStats(ctx context.Context, dbtx repository.DBTX, userId string, limit int, offset int) (*[]model.PostWithUserAndCounts, error) {
 	rows, err := dbtx.QueryContext(ctx, `
 		SELECT 
 		  p.id, p.text, p.reply_to, p.repost_ref, p.media_type, p.media_url, p.created_at,
 		  u.id, u.username, u.display_name, u.icon_url,
 		  COALESCE(like_counts.like_count, 0) AS like_count,
 		  COALESCE(repost_counts.repost_count, 0) AS repost_count,
-		  COALESCE(comment_counts.comment_count, 0) AS comment_count
+		  COALESCE(comment_counts.comment_count, 0) AS comment_count,
+		  CASE WHEN user_likes.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS user_liked,
+		  CASE WHEN user_reposts.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS user_reposted
 		FROM posts p
 		LEFT JOIN user u ON p.user_id = u.id
 		LEFT JOIN (
@@ -91,9 +93,15 @@ func (r *PostsRepository) FindAllWithCounts(ctx context.Context, dbtx repository
 		LEFT JOIN (
 		  SELECT reply_to, COUNT(*) AS comment_count FROM posts WHERE reply_to IS NOT NULL GROUP BY reply_to
 		) comment_counts ON comment_counts.reply_to = p.id
+		LEFT JOIN (
+		  SELECT post_id, user_id FROM likes WHERE user_id = ?
+		) user_likes ON user_likes.post_id = p.id
+		LEFT JOIN (
+		  SELECT post_id, user_id FROM reposts WHERE user_id = ?
+		) user_reposts ON user_reposts.post_id = p.id
 		ORDER BY p.created_at DESC
 		LIMIT ? OFFSET ?
-	`, limit, offset)
+	`, userId, userId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -117,6 +125,8 @@ func (r *PostsRepository) FindAllWithCounts(ctx context.Context, dbtx repository
 			&p.Stats.Likes,
 			&p.Stats.Reposts,
 			&p.Stats.Comments,
+			&p.UserActions.Liked,    // bool型想定
+			&p.UserActions.Reposted, // bool型想定
 		); err != nil {
 			return nil, err
 		}

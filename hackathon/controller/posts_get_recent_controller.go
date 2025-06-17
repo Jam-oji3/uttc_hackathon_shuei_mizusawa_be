@@ -28,6 +28,7 @@ func (c *PostGetRecentController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	}
 
 	// クエリパラメータから取得
+	userId := r.URL.Query().Get("userId")
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
@@ -43,7 +44,7 @@ func (c *PostGetRecentController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	posts, err := c.UseCase.Execute(ctx, limit, offset)
+	posts, err := c.UseCase.Execute(ctx, userId, limit, offset)
 	if err != nil {
 		log.Printf("failed to fetch posts: %v", err)
 		http.Error(w, "failed to fetch posts", http.StatusInternalServerError)
