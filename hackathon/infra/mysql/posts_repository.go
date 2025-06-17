@@ -80,8 +80,8 @@ func (r *PostsRepository) FindPostsWithStats(ctx context.Context, dbtx repositor
 		  COALESCE(like_counts.like_count, 0) AS like_count,
 		  COALESCE(repost_counts.repost_count, 0) AS repost_count,
 		  COALESCE(comment_counts.comment_count, 0) AS comment_count,
-		  CASE WHEN user_likes.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS user_liked,
-		  CASE WHEN user_reposts.user_id IS NOT NULL THEN TRUE ELSE FALSE END AS user_reposted
+		  CASE WHEN user_likes.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_liked,
+		  CASE WHEN user_reposts.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_reposted
 		FROM posts p
 		LEFT JOIN user u ON p.user_id = u.id
 		LEFT JOIN (
