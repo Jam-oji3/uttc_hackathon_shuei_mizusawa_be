@@ -41,7 +41,8 @@ func main() {
 	likeDeleteUC := usecase.NewLikeDeleteUseCase(txExecutor, likeRepo, db)
 	repostCreateUC := usecase.NewRepostCreateUseCase(txExecutor, repostRepo, db)
 	repostDeleteUC := usecase.NewRepostDeleteUseCase(txExecutor, repostRepo, db)
-	registerUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
+	userRegisterUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
+	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
 
 	//AuthC := controller.NewAuthUserController(AuthUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
@@ -50,7 +51,8 @@ func main() {
 	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
 	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
-	userRegisterC := controller.NewUserRegisterController(registerUC)
+	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
+	userFindProfileC := controller.NewUserFindProfileController(userFindProfileUC)
 
 	r := mux.NewRouter()
 
@@ -64,6 +66,7 @@ func main() {
 	r.Handle("/reposts", repostC).Methods("POST")
 	r.Handle("/reposts", repostC).Methods("DELETE")
 	r.Handle("/users", userRegisterC).Methods("POST")
+	r.Handle("/users/{username}", userFindProfileC).Methods("GET")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 

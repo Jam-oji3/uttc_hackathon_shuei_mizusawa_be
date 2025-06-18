@@ -36,7 +36,7 @@ func (uc *UserRegisterUseCase) Execute(ctx context.Context, id string, userName 
 
 	user := model.User{
 		Id:          id,
-		UserName:    userName,
+		Username:    userName,
 		DisplayName: displayName,
 		Email:       email,
 		Bio:         bio,
@@ -72,11 +72,11 @@ func validateUserData(user *model.User) error {
 	}
 
 	// 3. UserName: 空文字チェック、長さチェック（例: 3～30文字）、半角英数字と_のみ許可
-	if len(user.UserName) < 5 || len(user.UserName) > 15 {
+	if len(user.Username) < 5 || len(user.Username) > 15 {
 		return errors.New("userName must be between 5 and 15 characters")
 	}
 	userNameRegex := regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
-	if !userNameRegex.MatchString(user.UserName) {
+	if !userNameRegex.MatchString(user.Username) {
 		return errors.New("userName can only contain letters, numbers, and underscore")
 	}
 
