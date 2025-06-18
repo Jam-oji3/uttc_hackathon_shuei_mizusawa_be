@@ -77,8 +77,8 @@ func main() {
 	r.Handle("/users", userRegisterC).Methods("POST")
 	r.Handle("/users/{target}/posts", postGetByUserC).Methods("GET")
 	r.Handle("/users/{username}", userFindProfileC).Methods("GET")
-	r.Handle("/users/{followedId}/follow", followC).Methods("POST")
-	r.Handle("/users/{followedId}/follow", followC).Methods("DELETE")
+	r.Handle("/users/{followed}/follow", followC).Methods("POST")
+	r.Handle("/users/{followed}/follow", followC).Methods("DELETE")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 
