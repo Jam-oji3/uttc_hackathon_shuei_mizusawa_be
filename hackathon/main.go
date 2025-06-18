@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"github.com/gorilla/mux"
 	"hackathon/controller"
+	"hackathon/infra/firebase"
 	"hackathon/infra/mysql"
 	"hackathon/usecase"
 	"log"
@@ -20,8 +22,8 @@ func main() {
 	}
 
 	mysql.CloseDBWithSysCall(db)
-	//ctx := context.Background()
-	//firebaseAuthRepo, err := firebase.NewFirebaseAuthRepository(ctx)
+	ctx := context.Background()
+	firebaseAuthRepo, err := firebase.NewFirebaseAuthRepository(ctx)
 	if err != nil {
 		log.Fatalf("fail: InitFirebaseAuthRepo(), %v\n", err)
 	}
@@ -32,7 +34,7 @@ func main() {
 	repostRepo := mysql.NewRepostsRepository()
 	txExecutor := mysql.NewTxExecutor()
 
-	//AuthUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
+	AuthUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
 	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postRepo, db)
 	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
 	postGetRepliesUC := usecase.NewPostGetRepliesUseCase(postRepo, db)
@@ -45,7 +47,7 @@ func main() {
 	userRegisterUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
 	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
 
-	//AuthC := controller.NewAuthUserController(AuthUC)
+	AuthC := controller.NewAuthUserController(AuthUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
@@ -59,6 +61,7 @@ func main() {
 	r := mux.NewRouter()
 
 	// RESTfulエンドポイント
+	r.Handle("/auth", AuthC).Methods("GET")
 	r.Handle("/posts", postCreateC).Methods("POST")
 	r.Handle("/posts/recent", postGetRecentC).Methods("GET")
 	r.Handle("/posts/{postId}", postFindByIdC).Methods("GET")
