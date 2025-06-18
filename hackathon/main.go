@@ -37,6 +37,7 @@ func main() {
 	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
 	postGetRepliesUC := usecase.NewPostGetRepliesUseCase(postRepo, db)
 	postFindByIdUC := usecase.NewPostFindByIdUseCase(postRepo, db)
+	postGetByUserUC := usecase.NewPostGetByUserUseCase(postRepo, db)
 	likeCreateUC := usecase.NewLikeCreateUseCase(txExecutor, likeRepo, db)
 	likeDeleteUC := usecase.NewLikeDeleteUseCase(txExecutor, likeRepo, db)
 	repostCreateUC := usecase.NewRepostCreateUseCase(txExecutor, repostRepo, db)
@@ -49,6 +50,7 @@ func main() {
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
 	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
+	postGetByUserC := controller.NewPostGetByUserController(postGetByUserUC)
 	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
 	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
@@ -66,6 +68,7 @@ func main() {
 	r.Handle("/reposts", repostC).Methods("POST")
 	r.Handle("/reposts", repostC).Methods("DELETE")
 	r.Handle("/users", userRegisterC).Methods("POST")
+	r.Handle("/users/{target}/posts", postGetByUserC).Methods("GET")
 	r.Handle("/users/{username}", userFindProfileC).Methods("GET")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")

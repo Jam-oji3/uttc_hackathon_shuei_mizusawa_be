@@ -75,30 +75,6 @@ func (r *PostsRepository) FindPostWithStatsById(
 	return &p, nil
 }
 
-// ユーザーごとの投稿一覧取得
-func (r *PostsRepository) FindPostsByUserId(ctx context.Context, dbtx repository.DBTX, userId string) (*[]model.Post, error) {
-	rows, err := dbtx.QueryContext(ctx, `
-		SELECT id, user_id, text, reply_to, repost_ref, media_type, media_url, created_at
-		FROM posts
-		WHERE user_id = ?
-		ORDER BY created_at DESC
-	`, userId)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var posts []model.Post
-	for rows.Next() {
-		var p model.Post
-		if err := rows.Scan(&p.Id, &p.UserId, &p.Text, &p.ReplyTo, &p.RepostRef, &p.MediaType, &p.MediaURL, &p.CreatedAt); err != nil {
-			return nil, err
-		}
-		posts = append(posts, p)
-	}
-	return &posts, nil
-}
-
 // 投稿作成
 func (r *PostsRepository) InsertPost(ctx context.Context, dbtx repository.DBTX, post model.Post) error {
 	_, err := dbtx.ExecContext(ctx, `
@@ -224,6 +200,77 @@ func (r *PostsRepository) FindRepliesWithStats(
 		ORDER BY p.created_at ASC
 		LIMIT ? OFFSET ?
 	`, userId, userId, parentPostId, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []model.PostWithUserAndCounts
+	for rows.Next() {
+		var p model.PostWithUserAndCounts
+		if err := rows.Scan(
+			&p.Id,
+			&p.Text,
+			&p.ReplyTo,
+			&p.RepostRef,
+			&p.MediaType,
+			&p.MediaURL,
+			&p.CreatedAt,
+			&p.Author.Id,
+			&p.Author.Username,
+			&p.Author.DisplayName,
+			&p.Author.IconURL,
+			&p.Stats.Likes,
+			&p.Stats.Reposts,
+			&p.Stats.Comments,
+			&p.UserActions.Liked,
+			&p.UserActions.Reposted,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, p)
+	}
+	return &results, nil
+}
+
+func (r *PostsRepository) FindPostsByUserIdWithStats(
+	ctx context.Context,
+	dbtx repository.DBTX,
+	targetUserId string, // 投稿者のuserId
+	viewerUserId string, // ログイン中のユーザー（リアクション確認用）
+	limit int,
+	offset int,
+) (*[]model.PostWithUserAndCounts, error) {
+	rows, err := dbtx.QueryContext(ctx, `
+		SELECT 
+		  p.id, p.text, p.reply_to, p.repost_ref, p.media_type, p.media_url, p.created_at,
+		  u.id, u.username, u.display_name, u.icon_url,
+		  COALESCE(like_counts.like_count, 0) AS like_count,
+		  COALESCE(repost_counts.repost_count, 0) AS repost_count,
+		  COALESCE(comment_counts.comment_count, 0) AS comment_count,
+		  CASE WHEN user_likes.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_liked,
+		  CASE WHEN user_reposts.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_reposted
+		FROM posts p
+		LEFT JOIN users u ON p.user_id = u.id
+		LEFT JOIN (
+		  SELECT post_id, COUNT(*) AS like_count FROM likes GROUP BY post_id
+		) like_counts ON like_counts.post_id = p.id
+		LEFT JOIN (
+		  SELECT post_id, COUNT(*) AS repost_count FROM reposts GROUP BY post_id
+		) repost_counts ON repost_counts.post_id = p.id
+		LEFT JOIN (
+		  SELECT reply_to, COUNT(*) AS comment_count FROM posts WHERE reply_to IS NOT NULL GROUP BY reply_to
+		) comment_counts ON comment_counts.reply_to = p.id
+		LEFT JOIN (
+		  SELECT post_id, user_id FROM likes WHERE user_id = ?
+		) user_likes ON user_likes.post_id = p.id
+		LEFT JOIN (
+		  SELECT post_id, user_id FROM reposts WHERE user_id = ?
+		) user_reposts ON user_reposts.post_id = p.id
+		WHERE p.user_id = ?
+		ORDER BY p.created_at DESC
+		LIMIT ? OFFSET ?
+	`, viewerUserId, viewerUserId, targetUserId, limit, offset)
 	if err != nil {
 		return nil, err
 	}
