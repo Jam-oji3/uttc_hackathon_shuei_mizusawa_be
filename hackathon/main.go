@@ -32,6 +32,7 @@ func main() {
 	postRepo := mysql.NewPostsRepository()
 	likeRepo := mysql.NewLikesRepository()
 	repostRepo := mysql.NewRepostsRepository()
+	followRepo := mysql.NewFollowsRepository()
 	txExecutor := mysql.NewTxExecutor()
 
 	authUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
@@ -46,6 +47,8 @@ func main() {
 	repostDeleteUC := usecase.NewRepostDeleteUseCase(txExecutor, repostRepo, db)
 	userRegisterUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
 	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
+	followCreateUC := usecase.NewFollowCreateUseCase(txExecutor, followRepo, db)
+	followDeleteUC := usecase.NewFollowDeleteUseCase(txExecutor, followRepo, db)
 
 	authC := controller.NewAuthUserController(authUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
@@ -57,6 +60,7 @@ func main() {
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
 	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
 	userFindProfileC := controller.NewUserFindProfileController(authUC, userFindProfileUC)
+	followC := controller.NewFollowController(authUC, followCreateUC, followDeleteUC)
 
 	r := mux.NewRouter()
 
@@ -73,6 +77,8 @@ func main() {
 	r.Handle("/users", userRegisterC).Methods("POST")
 	r.Handle("/users/{target}/posts", postGetByUserC).Methods("GET")
 	r.Handle("/users/{username}", userFindProfileC).Methods("GET")
+	r.Handle("/users/{followedId}/follow", followC).Methods("POST")
+	r.Handle("/users/{followedId}/follow", followC).Methods("DELETE")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 
