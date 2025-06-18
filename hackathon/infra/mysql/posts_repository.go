@@ -32,7 +32,7 @@ func (r *PostsRepository) FindPostWithStatsById(
 		  CASE WHEN user_likes.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_liked,
 		  CASE WHEN user_reposts.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_reposted
 		FROM posts p
-		LEFT JOIN user u ON p.user_id = u.id
+		LEFT JOIN users u ON p.user_id = u.id
 		LEFT JOIN (
 		  SELECT post_id, COUNT(*) AS like_count FROM likes GROUP BY post_id
 		) like_counts ON like_counts.post_id = p.id
@@ -110,7 +110,7 @@ func (r *PostsRepository) FindPostsWithStats(
 		  CASE WHEN user_likes.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_liked,
 		  CASE WHEN user_reposts.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_reposted
 		FROM posts p
-		LEFT JOIN user u ON p.user_id = u.id
+		LEFT JOIN users u ON p.user_id = u.id
 		LEFT JOIN (
 		  SELECT post_id, COUNT(*) AS like_count FROM likes GROUP BY post_id
 		) like_counts ON like_counts.post_id = p.id
@@ -180,7 +180,7 @@ func (r *PostsRepository) FindRepliesWithStats(
 		  CASE WHEN user_likes.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_liked,
 		  CASE WHEN user_reposts.user_id IS NOT NULL THEN 1 ELSE 0 END AS user_reposted
 		FROM posts p
-		LEFT JOIN user u ON p.user_id = u.id
+		LEFT JOIN users u ON p.user_id = u.id
 		LEFT JOIN (
 		  SELECT post_id, COUNT(*) AS like_count FROM likes GROUP BY post_id
 		) like_counts ON like_counts.post_id = p.id
