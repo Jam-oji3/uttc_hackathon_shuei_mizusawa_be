@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gorilla/mux"
 	"hackathon/controller"
 	"hackathon/infra/mysql"
 	"hackathon/usecase"
@@ -34,6 +35,8 @@ func main() {
 	//AuthUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
 	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postRepo, db)
 	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
+	postGetRepliesUC := usecase.NewPostGetRepliesUseCase(postRepo, db)
+	postFindByIdUC := usecase.NewPostFindByIdUseCase(postRepo, db)
 	likeCreateUC := usecase.NewLikeCreateUseCase(txExecutor, likeRepo, db)
 	likeDeleteUC := usecase.NewLikeDeleteUseCase(txExecutor, likeRepo, db)
 	repostCreateUC := usecase.NewRepostCreateUseCase(txExecutor, repostRepo, db)
@@ -43,17 +46,24 @@ func main() {
 	//AuthC := controller.NewAuthUserController(AuthUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
+	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
+	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
 	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
 	userRegisterC := controller.NewUserRegisterController(registerUC)
 
-	mux := http.NewServeMux()
-	//mux.Handle("/auth", AuthC)
-	mux.Handle("/posts/", postCreateC)
-	mux.Handle("/posts/recent", postGetRecentC)
-	mux.Handle("/likes", likeC)
-	mux.Handle("/reposts", repostC)
-	mux.Handle("/users", userRegisterC)
+	r := mux.NewRouter()
+
+	// RESTfulエンドポイント
+	r.Handle("/posts", postCreateC).Methods("POST")
+	r.Handle("/posts/recent", postGetRecentC).Methods("GET")
+	r.Handle("/posts/{postId}", postFindByIdC).Methods("GET")
+	r.Handle("/posts/{postId}/replies", postGetRepliesC).Methods("GET")
+	r.Handle("/likes", likeC).Methods("POST")
+	r.Handle("/likes", likeC).Methods("DELETE")
+	r.Handle("/reposts", repostC).Methods("POST")
+	r.Handle("/reposts", repostC).Methods("DELETE")
+	r.Handle("/users", userRegisterC).Methods("POST")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 
@@ -64,7 +74,7 @@ func main() {
 		AllowCredentials: true,
 	})
 
-	handler := c.Handler(mux)
+	handler := c.Handler(r)
 
 	log.Println("Listening on :8080")
 	if err := http.ListenAndServe(":8080", handler); err != nil {
