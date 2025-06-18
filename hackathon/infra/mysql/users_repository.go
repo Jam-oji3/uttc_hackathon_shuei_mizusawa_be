@@ -8,20 +8,20 @@ import (
 	"hackathon/repository"
 )
 
-type UserRepository struct {
+type UsersRepository struct {
 }
 
-// UserRepositoryインターフェースを実装
-var _ repository.UserRepository = (*UserRepository)(nil)
+// UsersRepositoryインターフェースを実装
+var _ repository.UsersRepository = (*UsersRepository)(nil)
 
-func NewUserRepository() *UserRepository {
-	return &UserRepository{}
+func NewUsersRepository() *UsersRepository {
+	return &UsersRepository{}
 }
 
-func (r *UserRepository) FindById(ctx context.Context, dbtx repository.DBTX, id string) (*model.User, error) {
+func (r *UsersRepository) FindById(ctx context.Context, dbtx repository.DBTX, id string) (*model.User, error) {
 	row := dbtx.QueryRowContext(ctx, `
 	SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
-	FROM user WHERE id = ?`, id)
+	FROM users WHERE id = ?`, id)
 
 	var u model.User
 	err := row.Scan(&u.Id, &u.Username, &u.DisplayName, &u.Email, &u.Bio, &u.IconURL, &u.CreatedAt, &u.UpdatedAt)
@@ -34,10 +34,10 @@ func (r *UserRepository) FindById(ctx context.Context, dbtx repository.DBTX, id 
 	return &u, nil
 }
 
-func (r *UserRepository) FindByUserName(ctx context.Context, dbtx repository.DBTX, userName string) (*model.User, error) {
+func (r *UsersRepository) FindByUserName(ctx context.Context, dbtx repository.DBTX, userName string) (*model.User, error) {
 	row := dbtx.QueryRowContext(ctx, `
 		SELECT id, username, display_name, email, bio, icon_url, created_at, updated_at
-	FROM user WHERE username = ?`, userName)
+	FROM users WHERE username = ?`, userName)
 
 	var u model.User
 	err := row.Scan(&u.Id, &u.Username, &u.DisplayName, &u.Email, &u.Bio, &u.IconURL, &u.CreatedAt, &u.UpdatedAt)
@@ -50,7 +50,7 @@ func (r *UserRepository) FindByUserName(ctx context.Context, dbtx repository.DBT
 	return &u, nil
 }
 
-func (r *UserRepository) FindProfileByUsername(ctx context.Context, dbtx repository.DBTX, username string) (*model.UserProfile, error) {
+func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx repository.DBTX, username string) (*model.UserProfile, error) {
 	row := dbtx.QueryRowContext(ctx, `
 	SELECT 
 		u.id,
@@ -62,7 +62,7 @@ func (r *UserRepository) FindProfileByUsername(ctx context.Context, dbtx reposit
 		(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following_count,
 		(SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count,
 		(SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS post_count
-	FROM user u
+	FROM users u
 	WHERE u.username = ?
 	`, username)
 
@@ -88,17 +88,17 @@ func (r *UserRepository) FindProfileByUsername(ctx context.Context, dbtx reposit
 	return &profile, nil
 }
 
-func (r *UserRepository) Insert(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
+func (r *UsersRepository) Insert(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
 	_, err := dbtx.ExecContext(ctx, `
-	INSERT INTO user (id, username, display_name, email, bio, icon_url, created_at, updated_at)
+	INSERT INTO users (id, username, display_name, email, bio, icon_url, created_at, updated_at)
 	VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		user.Id, user.Username, user.DisplayName, user.Email, user.Bio, user.IconURL, user.CreatedAt, user.UpdatedAt)
 	return err
 }
 
-func (r *UserRepository) Update(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
+func (r *UsersRepository) Update(ctx context.Context, dbtx repository.DBTX, user *model.User) error {
 	res, err := dbtx.ExecContext(ctx, `
-	UPDATE user 
+	UPDATE users 
 	SET display_name = ?, bio = ?, icon_url = ?, updated_at = ?
 	WHERE id = ?`,
 		user.DisplayName, user.Bio, user.IconURL, user.UpdatedAt, user.Id)
@@ -115,9 +115,9 @@ func (r *UserRepository) Update(ctx context.Context, dbtx repository.DBTX, user 
 	return nil
 }
 
-func (r *UserRepository) Delete(ctx context.Context, dbtx repository.DBTX, id string) error {
+func (r *UsersRepository) Delete(ctx context.Context, dbtx repository.DBTX, id string) error {
 	res, err := dbtx.ExecContext(ctx, `
-	DELETE FROM user WHERE id = ?`, id)
+	DELETE FROM users WHERE id = ?`, id)
 	if err != nil {
 		return err
 	}

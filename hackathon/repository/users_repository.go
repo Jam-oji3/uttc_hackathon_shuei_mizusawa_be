@@ -5,7 +5,7 @@ import (
 	"hackathon/model"
 )
 
-type UserRepository interface {
+type UsersRepository interface {
 	FindById(ctx context.Context, dbtx DBTX, id string) (*model.User, error)
 	FindByUserName(ctx context.Context, dbtx DBTX, userName string) (*model.User, error)
 	FindProfileByUsername(ctx context.Context, dbtx DBTX, username string) (*model.UserProfile, error)

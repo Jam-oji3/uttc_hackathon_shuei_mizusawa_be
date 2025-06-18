@@ -9,12 +9,12 @@ import (
 )
 
 type AuthUserUseCase struct {
-	UserRepo         repository.UserRepository
+	UserRepo         repository.UsersRepository
 	FirebaseAuthRepo repository.FirebaseAuthRepository
 	DB               *sql.DB
 }
 
-func NewAuthUserUseCase(firebaseAuthRepo repository.FirebaseAuthRepository, userRepo repository.UserRepository, db *sql.DB) *AuthUserUseCase {
+func NewAuthUserUseCase(firebaseAuthRepo repository.FirebaseAuthRepository, userRepo repository.UsersRepository, db *sql.DB) *AuthUserUseCase {
 	return &AuthUserUseCase{FirebaseAuthRepo: firebaseAuthRepo, UserRepo: userRepo, DB: db}
 }
 

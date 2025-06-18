@@ -8,11 +8,11 @@ import (
 )
 
 type UserFindProfileUseCase struct {
-	UserRepo repository.UserRepository
+	UserRepo repository.UsersRepository
 	DB       *sql.DB
 }
 
-func NewUserFindProfileUseCase(userRepo repository.UserRepository, db *sql.DB) *UserFindProfileUseCase {
+func NewUserFindProfileUseCase(userRepo repository.UsersRepository, db *sql.DB) *UserFindProfileUseCase {
 	return &UserFindProfileUseCase{
 		UserRepo: userRepo,
 		DB:       db,

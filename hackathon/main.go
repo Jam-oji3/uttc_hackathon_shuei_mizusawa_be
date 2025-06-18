@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("fail: InitFirebaseAuthRepo(), %v\n", err)
 	}
 
-	userRepo := mysql.NewUserRepository()
+	userRepo := mysql.NewUsersRepository()
 	postRepo := mysql.NewPostsRepository()
 	likeRepo := mysql.NewLikesRepository()
 	repostRepo := mysql.NewRepostsRepository()

@@ -14,11 +14,11 @@ import (
 
 type UserRegisterUseCase struct {
 	TxExecutor repository.TransactionExecutor
-	UserRepo   repository.UserRepository
+	UserRepo   repository.UsersRepository
 	DB         *sql.DB
 }
 
-func NewUserRegisterUseCase(txExecutor repository.TransactionExecutor, userRepo repository.UserRepository, db *sql.DB) *UserRegisterUseCase {
+func NewUserRegisterUseCase(txExecutor repository.TransactionExecutor, userRepo repository.UsersRepository, db *sql.DB) *UserRegisterUseCase {
 	return &UserRegisterUseCase{TxExecutor: txExecutor, UserRepo: userRepo, DB: db}
 }
 
