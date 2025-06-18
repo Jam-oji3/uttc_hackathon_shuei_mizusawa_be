@@ -12,11 +12,13 @@ import (
 )
 
 type UserFindProfileController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.UserFindProfileUseCase
 }
 
-func NewUserFindProfileController(useCase *usecase.UserFindProfileUseCase) *UserFindProfileController {
+func NewUserFindProfileController(authUC *usecase.AuthUserUseCase, useCase *usecase.UserFindProfileUseCase) *UserFindProfileController {
 	return &UserFindProfileController{
+		AuthUC:  authUC,
 		UseCase: useCase,
 	}
 }
@@ -30,10 +32,22 @@ func (c *UserFindProfileController) ServeHTTP(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	prof, err := c.UseCase.Execute(ctx, username)
+	viewerId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	prof, err := c.UseCase.Execute(ctx, username, viewerId)
 	if err != nil {
 		log.Printf("failed to fetch user profile (username: %v): %v", username, err)
 		http.Error(w, "failed to fetch user profile", http.StatusInternalServerError)

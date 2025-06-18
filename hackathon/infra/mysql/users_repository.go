@@ -50,10 +50,10 @@ func (r *UsersRepository) FindByUserName(ctx context.Context, dbtx repository.DB
 	return &u, nil
 }
 
-func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx repository.DBTX, username string) (*model.UserProfile, error) {
+func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx repository.DBTX, username string, viewerId string) (*model.UserProfile, error) {
 	row := dbtx.QueryRowContext(ctx, `
 	SELECT 
-		u.id,
+	    u.id,
 		u.username,
 		u.display_name,
 		u.bio,
@@ -61,12 +61,17 @@ func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx reposi
 		u.created_at,
 		(SELECT COUNT(*) FROM follows WHERE follower_id = u.id) AS following_count,
 		(SELECT COUNT(*) FROM follows WHERE followed_id = u.id) AS follower_count,
-		(SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS post_count
+		(SELECT COUNT(*) FROM posts WHERE user_id = u.id) AS post_count,
+		EXISTS (
+			SELECT 1 FROM follows WHERE follower_id = ? AND followed_id = u.id
+		) AS is_following
 	FROM users u
 	WHERE u.username = ?
-	`, username)
+	`, viewerId, username) // viewerIdが?1, usernameが?2の順番
 
 	var profile model.UserProfile
+	var isFollowing bool
+
 	err := row.Scan(
 		&profile.Id,
 		&profile.Username,
@@ -77,6 +82,7 @@ func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx reposi
 		&profile.Stats.FollowingCount,
 		&profile.Stats.FollowerCount,
 		&profile.Stats.PostCount,
+		&isFollowing,
 	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, model.ErrUserNotFound
@@ -84,6 +90,8 @@ func (r *UsersRepository) FindProfileByUsername(ctx context.Context, dbtx reposi
 	if err != nil {
 		return nil, err
 	}
+
+	profile.IsFollowing = isFollowing // UserProfileにisFollowingのboolフィールドを追加しておく
 
 	return &profile, nil
 }

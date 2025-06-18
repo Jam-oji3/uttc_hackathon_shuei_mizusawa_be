@@ -27,4 +27,5 @@ type UserProfile struct {
 		FollowerCount  int64 `json:"followerCount"`
 		PostCount      int64 `json:"postCount"`
 	} `json:"stats"`
+	IsFollowing bool `json:"isFollowing"`
 }

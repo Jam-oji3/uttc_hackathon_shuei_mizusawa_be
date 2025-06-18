@@ -34,7 +34,7 @@ func main() {
 	repostRepo := mysql.NewRepostsRepository()
 	txExecutor := mysql.NewTxExecutor()
 
-	AuthUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
+	authUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
 	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postRepo, db)
 	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
 	postGetRepliesUC := usecase.NewPostGetRepliesUseCase(postRepo, db)
@@ -47,7 +47,7 @@ func main() {
 	userRegisterUC := usecase.NewUserRegisterUseCase(txExecutor, userRepo, db)
 	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
 
-	AuthC := controller.NewAuthUserController(AuthUC)
+	authC := controller.NewAuthUserController(authUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
@@ -56,12 +56,12 @@ func main() {
 	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
 	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
-	userFindProfileC := controller.NewUserFindProfileController(userFindProfileUC)
+	userFindProfileC := controller.NewUserFindProfileController(authUC, userFindProfileUC)
 
 	r := mux.NewRouter()
 
 	// RESTfulエンドポイント
-	r.Handle("/auth", AuthC).Methods("GET")
+	r.Handle("/auth", authC).Methods("GET")
 	r.Handle("/posts", postCreateC).Methods("POST")
 	r.Handle("/posts/recent", postGetRecentC).Methods("GET")
 	r.Handle("/posts/{postId}", postFindByIdC).Methods("GET")
