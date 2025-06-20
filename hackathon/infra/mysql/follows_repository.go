@@ -26,6 +26,6 @@ func (r *FollowsRepository) DeleteFollow(ctx context.Context, dbtx repository.DB
 	_, err := dbtx.ExecContext(ctx, `
 		DELETE FROM follows
 		WHERE follower_id = ? AND followed_id = ?
-	`, followedId, followerId)
+	`, followerId, followedId)
 	return err
 }
