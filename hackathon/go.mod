@@ -4,7 +4,11 @@ go 1.24
 
 require (
 	firebase.google.com/go/v4 v4.16.1
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/go-sql-driver/mysql v1.9.1
+	github.com/gorilla/mux v1.8.1
+	github.com/ikawaha/kagome-dict/ipa v1.2.5
+	github.com/ikawaha/kagome/v2 v2.10.2
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/rs/cors v1.11.1
 )
@@ -39,7 +43,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.1 // indirect
-	github.com/gorilla/mux v1.8.1 // indirect
+	github.com/ikawaha/kagome-dict v1.1.6 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.5.0 // indirect
 	github.com/zeebo/errs v1.4.0 // indirect

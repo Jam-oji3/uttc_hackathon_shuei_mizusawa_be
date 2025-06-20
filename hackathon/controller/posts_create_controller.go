@@ -11,11 +11,15 @@ import (
 )
 
 type PostCreateController struct {
-	UseCase *usecase.PostCreateUseCase
+	CreateUC            *usecase.PostCreateUseCase
+	TrendExtractNounsUC *usecase.TrendExtractNounsUseCase
 }
 
-func NewPostCreateController(useCase *usecase.PostCreateUseCase) *PostCreateController {
-	return &PostCreateController{UseCase: useCase}
+func NewPostCreateController(createUC *usecase.PostCreateUseCase, trendExtractNounsUC *usecase.TrendExtractNounsUseCase) *PostCreateController {
+	return &PostCreateController{
+		CreateUC:            createUC,
+		TrendExtractNounsUC: trendExtractNounsUC,
+	}
 }
 
 func (c *PostCreateController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,9 +52,16 @@ func (c *PostCreateController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
-	post, err := c.UseCase.Execute(ctx, req.UserId, req.Text, req.ReplyTo, req.RepostRef, req.MediaType, req.MediaURL)
+	post, err := c.CreateUC.Execute(ctx, req.UserId, req.Text, req.ReplyTo, req.RepostRef, req.MediaType, req.MediaURL)
 	if err != nil {
 		log.Printf("failed to create a post: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = c.TrendExtractNounsUC.Execute(ctx, post.Text)
+	if err != nil {
+		log.Printf("failed to extract nouns: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

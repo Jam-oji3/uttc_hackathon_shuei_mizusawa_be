@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"hackathon/controller"
 	"hackathon/infra/firebase"
+
 	"hackathon/infra/mysql"
 	"hackathon/usecase"
 	"log"
@@ -33,6 +34,7 @@ func main() {
 	likeRepo := mysql.NewLikesRepository()
 	repostRepo := mysql.NewRepostsRepository()
 	followRepo := mysql.NewFollowsRepository()
+	trendRepo := mysql.NewTrendsRepository()
 	txExecutor := mysql.NewTxExecutor()
 
 	authUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
@@ -49,9 +51,11 @@ func main() {
 	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
 	followCreateUC := usecase.NewFollowCreateUseCase(txExecutor, followRepo, db)
 	followDeleteUC := usecase.NewFollowDeleteUseCase(txExecutor, followRepo, db)
+	trendExtractNounsUC := usecase.NewTrendExtractNounsUseCase(txExecutor, trendRepo, db)
+	trendGetTopUC := usecase.NewTrendGetTopUseCase(trendRepo, db)
 
 	authC := controller.NewAuthUserController(authUC)
-	postCreateC := controller.NewPostCreateController(postCreateUC)
+	postCreateC := controller.NewPostCreateController(postCreateUC, trendExtractNounsUC)
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
 	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
@@ -61,6 +65,7 @@ func main() {
 	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
 	userFindProfileC := controller.NewUserFindProfileController(authUC, userFindProfileUC)
 	followC := controller.NewFollowController(authUC, followCreateUC, followDeleteUC)
+	trendGetTopC := controller.NewTrendGetTopController(trendGetTopUC)
 
 	r := mux.NewRouter()
 
@@ -79,6 +84,7 @@ func main() {
 	r.Handle("/users/{username}", userFindProfileC).Methods("GET")
 	r.Handle("/users/{followed}/follow", followC).Methods("POST")
 	r.Handle("/users/{followed}/follow", followC).Methods("DELETE")
+	r.Handle("/trends/top", trendGetTopC).Methods("GET")
 
 	allowedOrigins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
 
