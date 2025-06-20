@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"hackathon/controller"
 	"hackathon/infra/firebase"
+	"hackathon/infra/gemini"
 
 	"hackathon/infra/mysql"
 	"hackathon/usecase"
@@ -29,6 +30,12 @@ func main() {
 		log.Fatalf("fail: InitFirebaseAuthRepo(), %v\n", err)
 	}
 
+	geminiClient, err := gemini.NewGeminiGateway(ctx)
+	if err != nil {
+		log.Fatalf("fail: NewGeminiGateway(), %v\n", err)
+	}
+	defer geminiClient.Close()
+
 	userRepo := mysql.NewUsersRepository()
 	postRepo := mysql.NewPostsRepository()
 	likeRepo := mysql.NewLikesRepository()
@@ -37,9 +44,10 @@ func main() {
 	trendRepo := mysql.NewTrendsRepository()
 	txExecutor := mysql.NewTxExecutor()
 	notificationRepo := mysql.NewNotificationsRepository()
+	spoilerRepo := mysql.NewSpoilersRepository()
 
 	authUC := usecase.NewAuthUserUseCase(firebaseAuthRepo, userRepo, db)
-	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, postRepo, db)
+	postCreateUC := usecase.NewPostCreateUseCase(txExecutor, geminiClient, postRepo, trendRepo, spoilerRepo, db)
 	postGetRecentUC := usecase.NewPostGetRecentUseCase(postRepo, db)
 	postGetRepliesUC := usecase.NewPostGetRepliesUseCase(postRepo, db)
 	postFindByIdUC := usecase.NewPostFindByIdUseCase(postRepo, db)
@@ -52,12 +60,12 @@ func main() {
 	userFindProfileUC := usecase.NewUserFindProfileUseCase(userRepo, db)
 	followCreateUC := usecase.NewFollowCreateUseCase(txExecutor, followRepo, db)
 	followDeleteUC := usecase.NewFollowDeleteUseCase(txExecutor, followRepo, db)
-	trendExtractNounsUC := usecase.NewTrendExtractNounsUseCase(txExecutor, trendRepo, db)
+	//trendExtractNounsUC := usecase.NewTrendExtractNounsUseCase(txExecutor, trendRepo, db)
 	trendGetTopUC := usecase.NewTrendGetTopUseCase(trendRepo, db)
 	notificationFetchUC := usecase.NewNotificationFetchUseCase(notificationRepo, db)
 
 	authC := controller.NewAuthUserController(authUC)
-	postCreateC := controller.NewPostCreateController(postCreateUC, trendExtractNounsUC)
+	postCreateC := controller.NewPostCreateController(postCreateUC)
 	postGetRecentC := controller.NewPostGetRecentController(postGetRecentUC)
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
 	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
