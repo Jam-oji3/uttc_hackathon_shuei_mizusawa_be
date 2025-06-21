@@ -12,4 +12,5 @@ type PostsRepository interface {
 	FindPostsWithStats(ctx context.Context, dbtx DBTX, userId string, limit, offset int) (*[]model.PostWithUserAndCounts, error)
 	FindRepliesWithStats(ctx context.Context, dbtx DBTX, userId string, parentPostId string, limit int, offset int) (*[]model.PostWithUserAndCounts, error)
 	FindPostsByUserIdWithStats(ctx context.Context, dbtx DBTX, targetUserId string, viewerUserId string, limit int, offset int) (*[]model.PostWithUserAndCounts, error)
+	SearchPostsByKeywordWithStats(ctx context.Context, dbtx DBTX, viewrUserId string, keyword string, limit int, offset int) (*[]model.PostWithUserAndCounts, error)
 }

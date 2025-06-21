@@ -37,4 +37,6 @@ type PostWithUserAndCounts struct {
 		Liked    bool `json:"liked"`
 		Reposted bool `json:"reposted"`
 	} `json:"userActions"`
+	SpoilerWord *string `json:"spoilerWord"`
+	RepostedBy  *string `json:"repostedBy"`
 }

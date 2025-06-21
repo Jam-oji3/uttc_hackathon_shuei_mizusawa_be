@@ -63,6 +63,7 @@ func main() {
 	//trendExtractNounsUC := usecase.NewTrendExtractNounsUseCase(txExecutor, trendRepo, db)
 	trendGetTopUC := usecase.NewTrendGetTopUseCase(trendRepo, db)
 	notificationFetchUC := usecase.NewNotificationFetchUseCase(notificationRepo, db)
+	postSearchUC := usecase.NewPostSearchUseCase(postRepo, db)
 
 	authC := controller.NewAuthUserController(authUC)
 	postCreateC := controller.NewPostCreateController(postCreateUC)
@@ -70,6 +71,7 @@ func main() {
 	postGetRepliesC := controller.NewPostGetRepliesController(postGetRepliesUC)
 	postFindByIdC := controller.NewPostFindByIdController(postFindByIdUC)
 	postGetByUserC := controller.NewPostGetByUserController(postGetByUserUC)
+	postSearchC := controller.NewPostSearchController(authUC, postSearchUC)
 	likeC := controller.NewLikeController(likeCreateUC, likeDeleteUC)
 	repostC := controller.NewRepostController(repostCreateUC, repostDeleteUC)
 	userRegisterC := controller.NewUserRegisterController(userRegisterUC)
@@ -84,6 +86,7 @@ func main() {
 	r.Handle("/auth", authC).Methods("GET")
 	r.Handle("/posts", postCreateC).Methods("POST")
 	r.Handle("/posts/recent", postGetRecentC).Methods("GET")
+	r.Handle("/posts/search", postSearchC).Methods("GET")
 	r.Handle("/posts/{postId}", postFindByIdC).Methods("GET")
 	r.Handle("/posts/{postId}/replies", postGetRepliesC).Methods("GET")
 	r.Handle("/likes", likeC).Methods("POST")
