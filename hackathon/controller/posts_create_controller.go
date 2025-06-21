@@ -11,11 +11,13 @@ import (
 )
 
 type PostCreateController struct {
+	AuthUC   *usecase.AuthUserUseCase
 	CreateUC *usecase.PostCreateUseCase
 }
 
-func NewPostCreateController(createUC *usecase.PostCreateUseCase) *PostCreateController {
+func NewPostCreateController(authUC *usecase.AuthUserUseCase, createUC *usecase.PostCreateUseCase) *PostCreateController {
 	return &PostCreateController{
+		AuthUC:   authUC,
 		CreateUC: createUC,
 	}
 }
@@ -27,7 +29,6 @@ func (c *PostCreateController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 
 	var req struct {
-		UserId    string  `json:"userId"`
 		Text      string  `json:"text"`
 		ReplyTo   *string `json:"replyTo"`
 		RepostRef *string `json:"repostRef"`
@@ -41,16 +42,28 @@ func (c *PostCreateController) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// JSONボディをデコード
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid JSON", http.StatusBadRequest)
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
-	post, err := c.CreateUC.Execute(ctx, req.UserId, req.Text, req.ReplyTo, req.RepostRef, req.MediaType, req.MediaURL)
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// JSONボディをデコード
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	post, err := c.CreateUC.Execute(ctx, userId, req.Text, req.ReplyTo, req.RepostRef, req.MediaType, req.MediaURL)
 	if err != nil {
 		log.Printf("failed to create a post: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

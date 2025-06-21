@@ -12,11 +12,13 @@ import (
 )
 
 type PostFindByIdController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.PostFindByIdUseCase
 }
 
-func NewPostFindByIdController(useCase *usecase.PostFindByIdUseCase) *PostFindByIdController {
+func NewPostFindByIdController(authUC *usecase.AuthUserUseCase, useCase *usecase.PostFindByIdUseCase) *PostFindByIdController {
 	return &PostFindByIdController{
+		AuthUC:  authUC,
 		UseCase: useCase,
 	}
 }
@@ -30,14 +32,20 @@ func (c *PostFindByIdController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userId := r.URL.Query().Get("userId")
-	if userId == "" {
-		http.Error(w, "Missing userId", http.StatusBadRequest)
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 
 	post, err := c.UseCase.Execute(ctx, userId, postId)
 	if err != nil {

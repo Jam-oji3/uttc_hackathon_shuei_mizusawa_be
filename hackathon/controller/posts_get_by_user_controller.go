@@ -13,11 +13,13 @@ import (
 )
 
 type PostGetByUserController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.PostGetByUserUseCase
 }
 
-func NewPostGetByUserController(UseCase *usecase.PostGetByUserUseCase) *PostGetByUserController {
+func NewPostGetByUserController(authUC *usecase.AuthUserUseCase, UseCase *usecase.PostGetByUserUseCase) *PostGetByUserController {
 	return &PostGetByUserController{
+		AuthUC:  authUC,
 		UseCase: UseCase,
 	}
 }
@@ -31,14 +33,24 @@ func (c *PostGetByUserController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	viewerId := r.URL.Query().Get("viewer")
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	viewerId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
-	if viewerId == "" {
-		http.Error(w, "viewer required", http.StatusBadRequest)
-		return
-	}
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 || limit > 100 {
 		limit = 10 // デフォルト値 or エラーにしても良い
@@ -47,9 +59,6 @@ func (c *PostGetByUserController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	if err != nil || offset < 0 {
 		offset = 0
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
 
 	posts, err := c.UseCase.Execute(ctx, targetId, viewerId, limit, offset)
 	if err != nil {

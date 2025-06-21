@@ -2,7 +2,6 @@ package mysql
 
 import (
 	"context"
-	"fmt"
 	"hackathon/model"
 	"hackathon/repository"
 )
@@ -405,8 +404,6 @@ func (r *PostsRepository) SearchPostsByKeywordWithStats(
 		ORDER BY p.created_at DESC
 		LIMIT ? OFFSET ?
 	`, viewerUserId, viewerUserId, "%"+keyword+"%", limit, offset)
-	fmt.Println("検索キーワード:", keyword)
-	fmt.Println("LIKEクエリ:", "%"+keyword+"%")
 
 	if err != nil {
 		return nil, err

@@ -12,11 +12,13 @@ import (
 )
 
 type PostGetRecentController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.PostGetRecentUseCase
 }
 
-func NewPostGetRecentController(useCase *usecase.PostGetRecentUseCase) *PostGetRecentController {
+func NewPostGetRecentController(authUC *usecase.AuthUserUseCase, useCase *usecase.PostGetRecentUseCase) *PostGetRecentController {
 	return &PostGetRecentController{
+		AuthUC:  authUC,
 		UseCase: useCase,
 	}
 }
@@ -27,8 +29,21 @@ func (c *PostGetRecentController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// クエリパラメータから取得
-	userId := r.URL.Query().Get("userId")
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
@@ -40,9 +55,6 @@ func (c *PostGetRecentController) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	if err != nil || offset < 0 {
 		offset = 0
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
 
 	posts, err := c.UseCase.Execute(ctx, userId, limit, offset)
 	if err != nil {

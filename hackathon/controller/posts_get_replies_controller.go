@@ -13,11 +13,13 @@ import (
 )
 
 type PostGetRepliesController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.PostGetRepliesUseCase
 }
 
-func NewPostGetRepliesController(useCase *usecase.PostGetRepliesUseCase) *PostGetRepliesController {
+func NewPostGetRepliesController(authUC *usecase.AuthUserUseCase, useCase *usecase.PostGetRepliesUseCase) *PostGetRepliesController {
 	return &PostGetRepliesController{
+		AuthUC:  authUC,
 		UseCase: useCase,
 	}
 }
@@ -35,7 +37,21 @@ func (c *PostGetRepliesController) ServeHTTP(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	userId := r.URL.Query().Get("userId")
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	limitStr := r.URL.Query().Get("limit")
 	offsetStr := r.URL.Query().Get("offset")
 
@@ -47,9 +63,6 @@ func (c *PostGetRepliesController) ServeHTTP(w http.ResponseWriter, r *http.Requ
 	if err != nil || offset < 0 {
 		offset = 0
 	}
-
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
 
 	posts, err := c.UseCase.Execute(ctx, userId, postId, limit, offset)
 	if err != nil {
