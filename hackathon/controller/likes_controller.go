@@ -11,21 +11,36 @@ import (
 )
 
 type LikeController struct {
+	AuthUC   *usecase.AuthUserUseCase
 	CreateUC *usecase.LikeCreateUseCase
 	DeleteUC *usecase.LikeDeleteUseCase
 }
 
-func NewLikeController(createUC *usecase.LikeCreateUseCase, deleteUC *usecase.LikeDeleteUseCase) *LikeController {
+func NewLikeController(authUC *usecase.AuthUserUseCase, createUC *usecase.LikeCreateUseCase, deleteUC *usecase.LikeDeleteUseCase) *LikeController {
 	return &LikeController{
+		AuthUC:   authUC,
 		CreateUC: createUC,
 		DeleteUC: deleteUC,
 	}
 }
 
 func (c *LikeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 	if r.Method == http.MethodPost {
 		var req struct {
-			UserId string `json:"userId"`
 			PostId string `json:"postId"`
 		}
 
@@ -39,10 +54,7 @@ func (c *LikeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		like, err := c.CreateUC.Execute(ctx, req.UserId, req.PostId)
+		like, err := c.CreateUC.Execute(ctx, userId, req.PostId)
 		if err != nil {
 			log.Printf("like creation failed: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -57,14 +69,11 @@ func (c *LikeController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Like:    like,
 			Message: "Like creation successful",
 		})
+		return
 
 	} else if r.Method == http.MethodDelete {
 
-		userId := r.URL.Query().Get("userId")
 		postId := r.URL.Query().Get("postId")
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		err := c.DeleteUC.Execute(ctx, userId, postId)
 		if err != nil {

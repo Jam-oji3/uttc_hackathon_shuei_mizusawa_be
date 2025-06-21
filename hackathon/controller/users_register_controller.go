@@ -12,11 +12,15 @@ import (
 )
 
 type UserRegisterController struct {
+	AuthUC  *usecase.AuthUserUseCase
 	UseCase *usecase.UserRegisterUseCase
 }
 
-func NewUserRegisterController(useCase *usecase.UserRegisterUseCase) *UserRegisterController {
-	return &UserRegisterController{UseCase: useCase}
+func NewUserRegisterController(authUC *usecase.AuthUserUseCase, useCase *usecase.UserRegisterUseCase) *UserRegisterController {
+	return &UserRegisterController{
+		AuthUC:  authUC,
+		UseCase: useCase,
+	}
 }
 
 func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -25,9 +29,23 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
 	// JSONデコード用の構造体を定義
 	var req struct {
-		ID          string `json:"id"`
 		UserName    string `json:"username"`
 		DisplayName string `json:"displayName"`
 		Bio         string `json:"bio"`
@@ -47,16 +65,13 @@ func (c *UserRegisterController) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-	defer cancel()
-
-	user, err := c.UseCase.Execute(ctx, req.ID, req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
+	user, err := c.UseCase.Execute(ctx, userId, req.UserName, req.DisplayName, req.Bio, req.IconURL, req.Email)
 	if err != nil {
 		if errors.Is(err, model.ErrUserAlreadyExists) {
-			log.Printf("user already exists: %v (id=%s, userName=%s)", err, req.ID, req.UserName)
+			log.Printf("user already exists: %v (id=%s, userName=%s)", err, userId, req.UserName)
 			http.Error(w, err.Error(), http.StatusConflict)
 		} else {
-			log.Printf("failed to register user: %v (id=%s, userName=%s)", err, req.ID, req.UserName)
+			log.Printf("failed to register user: %v (id=%s, userName=%s)", err, userId, req.UserName)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return

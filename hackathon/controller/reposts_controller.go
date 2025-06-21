@@ -11,21 +11,36 @@ import (
 )
 
 type RepostController struct {
+	AuthUC   *usecase.AuthUserUseCase
 	CreateUC *usecase.RepostCreateUseCase
 	DeleteUC *usecase.RepostDeleteUseCase
 }
 
-func NewRepostController(createUC *usecase.RepostCreateUseCase, deleteUC *usecase.RepostDeleteUseCase) *RepostController {
+func NewRepostController(authUC *usecase.AuthUserUseCase, createUC *usecase.RepostCreateUseCase, deleteUC *usecase.RepostDeleteUseCase) *RepostController {
 	return &RepostController{
+		AuthUC:   authUC,
 		CreateUC: createUC,
 		DeleteUC: deleteUC,
 	}
 }
 
 func (c *RepostController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	idToken, err := ExtractBearerToken(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+	defer cancel()
+
+	userId, _, _, err := c.AuthUC.Exec(ctx, idToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
 	if r.Method == http.MethodPost {
 		var req struct {
-			UserId string `json:"userId"`
 			PostId string `json:"postId"`
 		}
 
@@ -39,10 +54,7 @@ func (c *RepostController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
-
-		repost, err := c.CreateUC.Execute(ctx, req.UserId, req.PostId)
+		repost, err := c.CreateUC.Execute(ctx, userId, req.PostId)
 		if err != nil {
 			log.Printf("repost creation failed: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -59,12 +71,7 @@ func (c *RepostController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 
 	} else if r.Method == http.MethodDelete {
-
-		userId := r.URL.Query().Get("userId")
 		postId := r.URL.Query().Get("postId")
-
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
-		defer cancel()
 
 		err := c.DeleteUC.Execute(ctx, userId, postId)
 		if err != nil {
